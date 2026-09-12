@@ -1,35 +1,43 @@
 import "dotenv/config";
-import { askGroq, askGroqJSON } from "./llm/groqClient.js";
+import { askGroqWithTools } from "./llm/groqClient.js";
+import { getGitDiff, getGitLog } from "./tools/gitTools.js";
 
-// 1. Zero-shot (already tested)
-const zeroShot = await askGroq("Classify the sentiment: 'This product is amazing!'");
-console.log("🔹 Zero-shot:", zeroShot);
+const tools = [
+  {
+    type: "function",
+    function: {
+      name: "getGitLog",
+      description: "Use this to list commit MESSAGES and commit history (titles only, no code). Good for questions like 'what were my recent commits' or 'show commit history'.",
+      parameters: { type: "object", properties: {} },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "getGitDiff",
+      description: "Use this to see the ACTUAL CODE that changed (line-by-line additions/deletions) in the most recent commit. Good for questions like 'what code changed' or 'show me the diff'.",
+      parameters: { type: "object", properties: {} },
+    },
+  },
+];
 
-// 2. Few-shot — examples dekar pattern sikhaya
-const fewShotPrompt = `
-Text: "This product is amazing!" -> Positive
-Text: "Worst purchase ever." -> Negative
-Text: "It's okay, does the job." -> Neutral
-Text: "Delivery was super fast and packaging was great" -> 
-`;
-const fewShot = await askGroq(fewShotPrompt);
-console.log("🔹 Few-shot:", fewShot);
+const toolFunctions = {
+  getGitLog: getGitLog,
+  getGitDiff: getGitDiff,
+};
 
-// 3. Chain-of-thought — step-by-step sochne ko kaha
-const cotPrompt = `
-Solve step by step: A train travels at 60 km/h for 2.5 hours. 
-How much distance does it cover? Show your reasoning, then give the final answer.
-`;
-const cot = await askGroq(cotPrompt);
-console.log("🔹 Chain-of-thought:", cot);
+// Test 1: commit history wala sawaal
+const result1 = await askGroqWithTools(
+  "What were my last few commits?",
+  tools,
+  toolFunctions
+);
+console.log("🔹 Result 1:", result1);
 
-// 4. Structured JSON output — guaranteed valid JSON
-const jsonPrompt = `
-Extract the name, email, and skills from this text. 
-Respond ONLY in valid JSON format: { "name": "...", "email": "...", "skills": ["...", "..."] }
-
-Text: "Hi, I'm Rajan Kumar, reach me at rajan@example.com. I know JavaScript, React, and Node.js."
-`;
-const structuredResult = await askGroqJSON(jsonPrompt);
-console.log("🔹 Structured JSON:", structuredResult);
-console.log("🔹 Name only:", structuredResult.name);
+// Test 2: code changes wala sawaal
+const result2 = await askGroqWithTools(
+  "What code changed in my most recent commit?",
+  tools,
+  toolFunctions
+);
+console.log("🔹 Result 2:", result2);
