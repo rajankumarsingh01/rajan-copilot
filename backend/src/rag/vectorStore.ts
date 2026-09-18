@@ -1,18 +1,22 @@
 import { ChromaClient } from "chromadb";
 import { getEmbedding } from "./embeddings.js";
 
-const client = new ChromaClient({ path: "http://localhost:8000" });
+const client = new ChromaClient({ host: "localhost", port: 8000, ssl: false });
 
-// Collection banate/access karte hain — collection matlab MongoDB ke "collection" jaisa hi concept
+let cachedCollection = null;
+
 export async function getCollection() {
-  const collection = await client.getOrCreateCollection({
+  if (cachedCollection) return cachedCollection;
+
+  cachedCollection = await client.getOrCreateCollection({
     name: "rajan_notes",
     embeddingFunction: null,
+    metadata: { "hnsw:space": "cosine" },
   });
-  return collection;
+
+  return cachedCollection;
 }
 
-// Document add karna (text + uska embedding store karna)
 export async function addDocument(id, text) {
   const collection = await getCollection();
   const embedding = await getEmbedding(text);
@@ -23,10 +27,9 @@ export async function addDocument(id, text) {
     documents: [text],
   });
 
-  console.log(`✅ Added document: ${id}`);
+  console.log(`Added document: ${id}`);
 }
 
-// Query karna — sabse relevant documents dhoondhna
 export async function queryDocuments(questionText, topN = 3) {
   const collection = await getCollection();
   const questionEmbedding = await getEmbedding(questionText);
