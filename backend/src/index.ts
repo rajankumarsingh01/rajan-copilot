@@ -1,20 +1,35 @@
 import "dotenv/config";
-import { readFileSync } from "fs";
-import { chunkText } from "./rag/chunking.js";
-import { addDocument, queryDocuments } from "./rag/vectorStore.js";
+import { runAgent } from "./agent/simpleAgent.js";
+import { getGitLog, getGitDiff } from "./tools/gitTools.js";
 
-// File padhna
-const notesText = readFileSync("sample-notes.md", "utf-8");
+const tools = [
+  {
+    type: "function",
+    function: {
+      name: "getGitLog",
+      description: "Get recent commit messages/titles (no code).",
+      parameters: { type: "object", properties: {} },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "getGitDiff",
+      description: "Get the actual code that changed in the most recent commit.",
+      parameters: { type: "object", properties: {} },
+    },
+  },
+];
 
-// Chunks banana
-const chunks = chunkText(notesText, 300, 30);
-console.log(`📄 Total chunks created: ${chunks.length}`);
+const toolFunctions = {
+  getGitLog: getGitLog,
+  getGitDiff: getGitDiff,
+};
 
-// Har chunk ko ChromaDB mein daalna
-for (let i = 0; i < chunks.length; i++) {
-  await addDocument(`chunk-${i}`, chunks[i]);
-}
+const result = await runAgent(
+  "Look at my recent commits, then check what code changed most recently. Summarize what I've been working on.",
+  tools,
+  toolFunctions
+);
 
-// Ab sawaal poochte hain
-const results = await queryDocuments("How does function calling work?");
-console.log("🔍 Most relevant chunk:", results[0]);
+console.log("\n📝 Final Answer:", result);
