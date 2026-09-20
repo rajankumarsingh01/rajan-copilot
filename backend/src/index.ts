@@ -7,16 +7,32 @@ const tools = [
     type: "function",
     function: {
       name: "getGitLog",
-      description: "Get recent commit messages/titles (no code).",
-      parameters: { type: "object", properties: {} },
+      description: "Get recent commit messages/titles (no code). Specify how many commits to show.",
+      parameters: {
+        type: "object",
+        properties: {
+          commitCount: {
+            type: "number",
+            description: "How many recent commits to fetch (default 5)",
+          },
+        },
+      },
     },
   },
   {
     type: "function",
     function: {
       name: "getGitDiff",
-      description: "Get the actual code that changed in the most recent commit.",
-      parameters: { type: "object", properties: {} },
+      description: "Get the actual code changes. Specify how many commits back to compare.",
+      parameters: {
+        type: "object",
+        properties: {
+          commitsBack: {
+            type: "number",
+            description: "How many commits back to diff against HEAD (default 1)",
+          },
+        },
+      },
     },
   },
 ];

@@ -1,21 +1,25 @@
 import { execSync } from "child_process";
 
-// Tool: Git diff dekhna (last commit mein kya change hua)
-export function getGitDiff() {
+// Helper: lamba text ko chhota kar do
+function truncate(text, maxChars = 1500) {
+  if (text.length <= maxChars) return text;
+  return text.slice(0, maxChars) + "\n...(truncated, output was too long)";
+}
+
+export function getGitLog(commitCount = 5) {
   try {
-    const diff = execSync("git diff HEAD~1 HEAD", { encoding: "utf-8" });
-    return diff || "No changes found.";
+    const log = execSync(`git log -${commitCount} --oneline`, { encoding: "utf-8" });
+    return truncate(log);
   } catch (error) {
-    return `Error getting git diff: ${error.message}`;
+    return `Error getting git log: ${error.message}`;
   }
 }
 
-// Tool: Git log dekhna (recent commits)
-export function getGitLog() {
+export function getGitDiff(commitsBack = 1) {
   try {
-    const log = execSync("git log -5 --oneline", { encoding: "utf-8" });
-    return log;
+    const diff = execSync(`git diff HEAD~${commitsBack} HEAD`, { encoding: "utf-8" });
+    return truncate(diff || "No changes found.");
   } catch (error) {
-    return `Error getting git log: ${error.message}`;
+    return `Error getting git diff: ${error.message}`;
   }
 }
